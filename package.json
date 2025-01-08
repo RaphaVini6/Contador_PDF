@@ -1,0 +1,17 @@
+{
+  "name": "contador_pdf",
+  "version": "1.0.0",
+  "description": "Aplicação Node.js para editar PDFs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1"
+  }
+}
