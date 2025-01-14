@@ -37,8 +37,8 @@ app.post("/upload", upload.single("pdf"), async (req, res) => {
 
     // Envia o arquivo modificado de volta
     res.download(outputPath, "modified.pdf", () => {
-      fs.unlinkSync(filePath); // Remove o arquivo original
-      fs.unlinkSync(outputPath); // Remove o arquivo modificado
+      fs.unlinkSync(filePath); 
+      fs.unlinkSync(outputPath); 
     });
   } catch (err) {
     console.error(err);
@@ -46,7 +46,6 @@ app.post("/upload", upload.single("pdf"), async (req, res) => {
   }
 });
 
-// Inicia o servidor
 app.listen(3000, () => {
   console.log("Servidor rodando em http://localhost:3000");
 });
