@@ -30,13 +30,11 @@ app.post("/upload", upload.single("pdf"), async (req, res) => {
       });
     });
 
-    // Salva o PDF modificado
     const modifiedPdfBytes = await pdfDoc.save();
     const outputPath = `uploads/modified-${req.file.filename}.pdf`;
     fs.writeFileSync(outputPath, modifiedPdfBytes);
 
-    // Envia o arquivo modificado de volta
-    res.download(outputPath, "modified.pdf", () => {
+    res.download(outputPath, "SAPR.pdf", () => {
       fs.unlinkSync(filePath); 
       fs.unlinkSync(outputPath); 
     });
