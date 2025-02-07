@@ -1,82 +1,73 @@
 document.getElementById("pdfInput").addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    const pageCountElement = document.getElementById("pageCount");
-  
-    if (!file) {
-      pageCountElement.textContent = "";
-      return;
-    }
-  
+  const files = event.target.files;
+  const pageCountElement = document.getElementById("pageCount");
+
+  if (!files.length) {
+    pageCountElement.textContent = "";
+    return;
+  }
+
+  pageCountElement.innerHTML = ""; // Limpa contagem anterior
+
+  for (const file of files) {
     if (file.type !== "application/pdf") {
-      pageCountElement.textContent = "Por favor, selecione um arquivo PDF.";
-      return;
+      pageCountElement.innerHTML += `<p style="color: red;">${file.name} não é um PDF.</p>`;
+      continue;
     }
-  
+
     try {
       const fileReader = new FileReader();
-  
+
       fileReader.onload = async (e) => {
         const arrayBuffer = e.target.result;
-  
-        // Carrega o PDF e conta as páginas usando pdf-lib
         const { PDFDocument } = PDFLib;
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const pageCount = pdfDoc.getPageCount();
-  
-        // Atualiza o texto na página
-        pageCountElement.textContent = `O PDF possui ${pageCount} página(s).`;
+
+        // Exibe a contagem de páginas para cada arquivo
+        pageCountElement.innerHTML += `<p>${file.name} tem ${pageCount} página(s).</p>`;
       };
-  
+
       fileReader.readAsArrayBuffer(file);
     } catch (error) {
       console.error("Erro ao processar o PDF:", error);
-      pageCountElement.textContent = "Erro ao processar o PDF.";
+      pageCountElement.innerHTML += `<p style="color: red;">Erro ao processar ${file.name}.</p>`;
     }
-  });
+  }
+});
+
+// Função para exibir links de download após envio
+document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
   
-  // Adiciona funcionalidade ao botão "Enviar PDF"
-  document.getElementById("submitBtn").addEventListener("click", async () => {
-    const fileInput = document.getElementById("pdfInput");
-    const fileName = document.getElementById("fileName").value.trim();
+  const formData = new FormData(event.target);
+  const response = await fetch("/upload", { method: "POST", body: formData });
+
+  if (!response.ok) {
+    alert("Erro ao enviar PDFs.");
+    return;
+  }
+
+  const data = await response.json();
+  const downloadDiv = document.getElementById("downloadLinks");
+  downloadDiv.innerHTML = "<h3>Downloads:</h3>";
+
+  data.files.forEach(file => {
+    const button = document.createElement("button");
+    button.textContent = "Baixar PDF";
     
-    if (!fileInput.files.length) {
-        alert("Por favor, selecione pelo menos um arquivo PDF.");
-        return;
-    }
+    button.onclick = () => {
+      const fileName = prompt("Digite o nome do arquivo:", file.defaultName);
+      if (fileName) {
+        const link = document.createElement("a");
+        link.href = file.url;  // Corrigido para garantir a URL correta
+        link.download = `${fileName}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    };
 
-    if (!fileName) {
-        alert("Por favor, insira um nome para o arquivo final.");
-        return;
-    }
-
-    const formData = new FormData();
-    for (let file of fileInput.files) {
-        formData.append("pdfs", file);
-    }
-    formData.append("fileName", fileName);
-
-    try {
-        const response = await fetch("/upload", {
-            method: "POST",
-            body: formData
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${fileName}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            alert("Download concluído!");
-        } else {
-            alert("Erro ao processar os arquivos.");
-        }
-    } catch (error) {
-        console.error("Erro ao enviar os PDFs:", error);
-        alert("Erro ao enviar os arquivos.");
-    }
+    downloadDiv.appendChild(button);
+  });
 });
