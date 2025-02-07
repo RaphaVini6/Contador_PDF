@@ -1,32 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload de PDF</title>
+  <title>Upload e Fusão de PDFs</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Upload de PDF</h1>
-    <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
-      <input type="file" id="pdfInput" name="pdf" accept="application/pdf" required>
+    <h1>Upload e Fusão de PDFs</h1>
+    <form id="uploadForm">
+      <input type="file" id="pdfInput" name="pdfs" accept="application/pdf" multiple required>
       <p id="pageCount" style="margin: 10px 0; color: #555;"></p>
-      <button type="submit">Enviar PDF</button>
+
+      <label for="fileName">Nome do arquivo final:</label>
+      <input type="text" id="fileName" placeholder="Digite o nome do arquivo..." required>
+
+      <button type="button" id="submitBtn">Enviar PDFs</button>
     </form>
 
-    <!-- <div id="animation" class="hidden">
-      <div class="extintor">
-        <img src="extintor.png" alt="Extintor" />
-      </div>
-      <div class="fogo">
-        <img src="fogo.gif" alt="Fogo" />
-      </div>
-      <p id="status" class="hidden">Download concluído!</p>
-    </div> -->
+    <p id="status" class="hidden">Download concluído!</p>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
   <script src="script.js"></script>
-</body>
 </body>
 </html>

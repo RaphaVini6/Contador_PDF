@@ -35,19 +35,48 @@ document.getElementById("pdfInput").addEventListener("change", async (event) => 
   });
   
   // Adiciona funcionalidade ao botão "Enviar PDF"
-  document.getElementById("submitBtn").addEventListener("click", () => {
-    const animation = document.getElementById("animation");
-    const status = document.getElementById("status");
-    const form = document.getElementById("uploadForm");
-  
-    // Esconde o formulário e mostra a animação
-    form.classList.add("hidden");
-    animation.classList.remove("hidden");
-  
-    // Simula o processo de envio e exibe a mensagem "Download concluído"
-    setTimeout(() => {
-      animation.classList.add("hidden");
-      status.classList.remove("hidden");
-    }, 3000); // Tempo de 3 segundos para a animação
-  });
-  
+  document.getElementById("submitBtn").addEventListener("click", async () => {
+    const fileInput = document.getElementById("pdfInput");
+    const fileName = document.getElementById("fileName").value.trim();
+    
+    if (!fileInput.files.length) {
+        alert("Por favor, selecione pelo menos um arquivo PDF.");
+        return;
+    }
+
+    if (!fileName) {
+        alert("Por favor, insira um nome para o arquivo final.");
+        return;
+    }
+
+    const formData = new FormData();
+    for (let file of fileInput.files) {
+        formData.append("pdfs", file);
+    }
+    formData.append("fileName", fileName);
+
+    try {
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${fileName}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            alert("Download concluído!");
+        } else {
+            alert("Erro ao processar os arquivos.");
+        }
+    } catch (error) {
+        console.error("Erro ao enviar os PDFs:", error);
+        alert("Erro ao enviar os arquivos.");
+    }
+});

@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const { PDFDocument, rgb } = require("pdf-lib");
+const { PDFDocument } = require("pdf-lib");
 const fs = require("fs");
 const path = require("path");
 
@@ -9,41 +9,39 @@ const upload = multer({ dest: "uploads/" });
 
 app.use(express.static("public"));
 
-// Endpoint para upload do PDF e numeração de páginas
-app.post("/upload", upload.single("pdf"), async (req, res) => {
-  const filePath = req.file.path;
-  try {
-    const existingPdfBytes = fs.readFileSync(filePath);
+// Endpoint para upload e fusão dos PDFs
+app.post("/upload", upload.array("pdfs", 10), async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).send("Nenhum arquivo foi enviado.");
+    }
 
-    // Carrega o PDF existente
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const pages = pdfDoc.getPages();
+    const fileName = req.body.fileName ? req.body.fileName.replace(/\s+/g, "_") : "documento_fusionado";
+    
+    try {
+        const mergedPdf = await PDFDocument.create();
 
-    // Adiciona numeração no canto inferior direito
-    pages.forEach((page, index) => {
-      const { width, height } = page.getSize();
-      page.drawText(`${index + 1}`, {
-        x: width - 30,
-        y: 20,
-        size: 12,
-        color: rgb(0, 0, 0),
-      });
-    });
+        for (const file of req.files) {
+            const pdfBytes = fs.readFileSync(file.path);
+            const pdfDoc = await PDFDocument.load(pdfBytes);
+            const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+            copiedPages.forEach((page) => mergedPdf.addPage(page));
+        }
 
-    const modifiedPdfBytes = await pdfDoc.save();
-    const outputPath = `uploads/modified-${req.file.filename}.pdf`;
-    fs.writeFileSync(outputPath, modifiedPdfBytes);
+        const mergedPdfBytes = await mergedPdf.save();
+        const outputPath = path.join(__dirname, "uploads", `${fileName}.pdf`);
+        fs.writeFileSync(outputPath, mergedPdfBytes);
 
-    res.download(outputPath, "SAPR.pdf", () => {
-      fs.unlinkSync(filePath); 
-      fs.unlinkSync(outputPath); 
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Erro ao processar o PDF.");
-  }
+        res.download(outputPath, `${fileName}.pdf`, () => {
+            // Limpa os arquivos temporários
+            req.files.forEach((file) => fs.unlinkSync(file.path));
+            fs.unlinkSync(outputPath);
+        });
+    } catch (error) {
+        console.error("Erro ao mesclar PDFs:", error);
+        res.status(500).send("Erro ao processar os arquivos.");
+    }
 });
 
 app.listen(3000, () => {
-  console.log("Servidor rodando em http://localhost:3000");
+    console.log("Servidor rodando em http://localhost:3000");
 });
